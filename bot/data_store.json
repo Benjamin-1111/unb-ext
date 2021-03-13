@@ -1,0 +1,15 @@
+{
+    "818136401757339680": {
+        "log": log-channel-ID,
+        "webhook": "Your webhook, can be setup with the setlog command",
+        "798556932151181363": {
+            "amount": 0,
+            "time": 0,
+            "mond": 0,
+            "mars": 0,
+            "saturn": 0,
+            "jupiter": 0,
+            "treibstoff": 0
+        }
+    }
+}
