@@ -51,8 +51,32 @@ pip install discord-py-slash-command
  ```py
  pip install pybelieva
  ```
+### Setup:
+- Download the SourceCode
+- Fill in the Settings file with bot token and unbeliva Token
+- Invite the Bot
+- Run the Bot
 
+## Authorization
+### Discord API Token:
+- Go to the [Discord Developer Portal](discord.com/developers/applications)
+- Login
+- Klick on 'New Application'
+- Fill In the Bot name
+(- Choose a Team, default is your Personal)
+- Go to the 'Bot' tab in your application
+- Klick on 'Add Bot'
+- Klick on 'Yes, do it!'
+- Activate *Presence Intent* and *Server Members Intent*
+- Copy Token (Don't show this Token to anyone!!)
+- Paste the Token in the settings file
 
+### Unbeliva Token:
+- Go to [Applications](https://unbelievaboat.com/applications) 
+- Login if required
+- Paste in your Bot's client ID (you can find it in the Discord Developer Portal)
+- Copy Token and paste it into the settings file
+- authorize the app via the link
 
 ## Usage
 ### User commands (slash commands)
