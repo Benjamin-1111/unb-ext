@@ -130,13 +130,18 @@ class Economy(commands.Cog):
         bal = await self.unb_client.get_user_balance(guild_id=ctx.guild.id, user_id=ctx.author.id)
         with open('data_store.json', 'r+') as f:
             data = json.load(f)
+        e = []
+        for i in ctx.author.roles:
+            e.append(i.id)
         if item == 'Treibstoff':
             amount2 = 500000
             if amount2*amount > bal.cash + bal.bank:
                 await ctx.channel.send(f'Du hast leider nicht genug um dir {amount} mal {item} kaufen zu können')
                 return
             items = int(data[str(ctx.guild.id)][str(ctx.author.id)][str(item).lower()]) + int(amount)
-
+            
+            if int(data[str(ctx.guild.id)]['rakete']) not in e:
+                await ctx.send('Du brauchst die Raketen-Rolle, um dir Treibstoff zu kaufen')
             if bal.cash - int(amount2*amount) > 0:
                 cash = int(amount2*amount)
                 bank = 0
@@ -174,19 +179,16 @@ class Economy(commands.Cog):
         if amount2*amount > bal.cash + bal.bank:
             await ctx.channel.send(f'Du hast leider nicht genug Geld um dir {amount} mal {item} kaufen zu können')
             return
-
-        
+        if int(data[str(ctx.guild.id)]['rakete']) not in e:
+            await ctx.send('Du brauchst die Raketen-Rolle, um zu einem Planet fliegen zu können.')
         items = int(data[str(ctx.guild.id)][str(ctx.author.id)][str(item).lower()]) + int(amount)
         print(items)
         data[str(ctx.guild.id)][str(ctx.author.id)][str(item).lower()] = items
         with open('data_store.json', 'w') as f:
             json.dump(data, f, indent=4)
         print(int(amount2*amount))
-
-        
-
         if int(data[str(ctx.guild.id)][str(ctx.author.id)]['treibstoff']) < amount:
-            await ctx.send(f'Du hast leider nicht genug Treibstoffn. kaufe dir neue mit**`/shop buy item:Treibstoff amount:1`**')
+            await ctx.send(f'Du hast leider nicht genug Treibstoff. kaufe dir neuen mit**`/shop buy item:Treibstoff amount:1`**')
             return
         data[str(ctx.guild.id)][str(ctx.author.id)]['treibstoff'] = int(data[str(ctx.guild.id)][str(ctx.author.id)]['treibstoff']) - int(amount)
         with open('data_store.json', 'w') as f:
