@@ -1,6 +1,7 @@
 {
     "818136401757339680": {
         "log": log-channel-ID,
+        "rakete": 820032284903997471,
         "webhook": "Your webhook, can be setup with the setlog command",
         "798556932151181363": {
             "amount": 0,
