@@ -273,8 +273,13 @@ class Economy(commands.Cog):
             json.dump(data, f, indent=4)
 
     @cog_ext.cog_slash(description="Verschenke Geld", guild_ids=guild_ids, options=[manage_commands.create_option(description='Bitte gebe an, wie viel Geld du verschenken möchtest.', name='Amount', required=True, option_type=(4)), manage_commands.create_option(description='Soll Das giveaway für alle zugänglich sein, oder nur für den PinguClan?', name='Public', required=False, option_type=(3), choices=['Public', 'Private']), manage_commands.create_option(description='Gebe eine custom beschreibung an. Zeichenlimit: 200; Links sind verboten.', name='Beschreibung', required=False, option_type=3)])
-    async def giveaway(self, ctx: commands.Context, Amount = 0, Public = False, Beschreibung=''):
+    async def giveaway(self, ctx: commands.Context, Amount = 0, Public = 'False', Beschreibung=''):
+        await ctx.respond(eat=False)
         print(Public)
+        print(len(str(Beschreibung)))
+        if len(str(Beschreibung)) > 200:
+            await ctx.channel.send('Bitte wähle eine kürzere Beschreibung.')
+            return
         if Public == 'Public':
             role = 818136401757339680 #everyone
         else:
