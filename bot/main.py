@@ -271,8 +271,85 @@ class Economy(commands.Cog):
         data[str(ctx.guild.id)][str(ctx.author.id)]['collected'] = time.strftime("%d%m%y")
         with open('data_store.json', 'w') as f:
             json.dump(data, f, indent=4)
+
+    @cog_ext.cog_slash(description="Verschenke Geld", guild_ids=guild_ids, options=[manage_commands.create_option(description='Bitte gebe an, wie viel Geld du verschenken möchtest.', name='Amount', required=True, option_type=(4)), manage_commands.create_option(description='Soll Das giveaway für alle zugänglich sein, oder nur für den PinguClan?', name='Public', required=False, option_type=(3), choices=['Public', 'Private']), manage_commands.create_option(description='Gebe eine custom beschreibung an. Zeichenlimit: 200; Links sind verboten.', name='Beschreibung', required=False, option_type=3)])
+    async def giveaway(self, ctx: commands.Context, Amount = 0, Public = False, Beschreibung=''):
+        print(Public)
+        if Public == 'Public':
+            role = 818136401757339680 #everyone
+        else:
+            role = 821320546918072320 #pinguclan
+            
+        if Amount <= 0:
+            return await ctx.send("Du solltest schon ein bischen mehr verschenken ;)")
+        bal = await self.unb_client.get_user_balance(
+            ctx.guild.id, ctx.author.id
+        )  
+        if bal.cash < Amount: 
+            return await ctx.send("Du hast leider nicht genug Geld bei dir..")
+        guild = await self.unb_client.get_guild(ctx.guild.id)
+        currency = guild.symbol
+        await self.unb_client.patch_user_balance( 
+            ctx.guild.id, ctx.author.id, cash=-Amount, reason="giveaway command"
+        )
         
-                                                 
+        #if Beschreibung == None:
+        description = f"{Beschreibung}\n{ctx.author.mention} verschenkt {currency}{Amount}! \nreagiere mit {self.emoji}, um teilzunehmen. \nBenötigte Rolle: {ctx.guild.get_role(role).mention}"
+        #else:
+        #    description = f'{Beschreibung}'
+        embed = discord.Embed(title="Giveaway", description=description)
+        msg = await ctx.send(embed=embed)
+        await msg.add_reaction(self.emoji)  
+        await asyncio.sleep(60)  
+        msg = await ctx.channel.fetch_message(msg.id)
+        e = []
+        for i in ctx.author.roles:
+            e.append(i.id)
+        
+        candidates = [
+            i
+            async for i in cast(
+                Reaction,
+                get(
+                    msg.reactions,
+                    emoji=self.emoji,
+                ),  
+            ).users()  
+            if not i.bot  
+            and i != ctx.author and role in e
+        ]
+        print(msg.reactions, candidates)
+        
+        try:
+            winner: Union[User, Member] = random.choice(
+                candidates
+            )
+            embed = discord.Embed(title="Giveaway", description=f'Winner: {winner.mention}')
+            await msg.edit(embed = embed)
+            await self.unb_client.patch_user_balance(  
+                ctx.guild.id, winner.id, cash=Amount, reason="giveaway winner"
+            )
+            await msg.clear_reactions()
+        except:
+            embed = discord.Embed(title="Giveaway", description='No winners')
+            await msg.edit(embed = embed)
+            await msg.clear_reactions()
+        
+        with open('data_store.json', 'r') as f:
+            data = json.load(f)
+        webhook_url = str(data[str(ctx.guild.id)]['webhook'])
+        webhook = DiscordWebhook(url=webhook_url, content='')
+        embed1 = DiscordEmbed(title='', description=f'**User:** {ctx.author.mention}\n**Action:** Giveaway\n**Amount:** -{Amount}', color='03b2f8')
+        embed2 = DiscordEmbed(title='', description=f'**User:** {winner.mention}\n**Action:** Giveaway won\n**Amount:** +{Amount}', color='03b2f8')
+        embed1.set_author(name='Balance updated', icon_url='https://images-ext-2.discordapp.net/external/i0QukyQFeMvyky2L88d-lcpPGvruP_5XcvHxmsx56R0/https/media.discordapp.net/attachments/506838906872922145/551888336525197312/update.png')
+        embed2.set_author(name='Balance updated', icon_url='https://images-ext-2.discordapp.net/external/i0QukyQFeMvyky2L88d-lcpPGvruP_5XcvHxmsx56R0/https/media.discordapp.net/attachments/506838906872922145/551888336525197312/update.png')
+        embed1.set_timestamp()
+        embed2.set_timestamp()
+        webhook.add_embed(embed1)
+        webhook.add_embed(embed2)
+        response = webhook.execute()
+
+
 with open('bot-settings.json', 'r') as f:
     data = json.load(f)
 
