@@ -86,6 +86,11 @@ pip install discord-py-slash-command
                  Saturn
                  Jupiter
  /lend amount: 100
+ /collect income
+ /giveaway
+ /giveaway amount:1 1 public:Public beschreibung: some description
+                             Private beschreibung: some description
+/incomes user: @some_user
  ```
 ### Owner settings (normal commands)
 ```
