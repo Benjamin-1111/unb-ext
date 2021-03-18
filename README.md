@@ -81,14 +81,14 @@ pip install discord-py-slash-command
 ## Usage
 ### User commands (slash commands)
 ```
- /shop buy item: Mond amount: 1
-                 Mars
-                 Saturn
-                 Jupiter
+ /shop buy item: Mond    amount: 1
+                 Mars    amount: 1
+                 Saturn  amount: 1
+                 Jupiter amount: 1
  /lend amount: 100
  /collect income
  /giveaway
- /giveaway amount:1 1 public:Public beschreibung: some description
+ /giveaway amount:1 1 public:Public  beschreibung: some description
                              Private beschreibung: some description
 /incomes user: @some_user
  ```
