@@ -24,7 +24,7 @@ time = datetime.datetime.now()
 
 
 def Find(string): 
-  
+
     regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
     url = re.findall(regex,string)       
     return [x[0] for x in url] 
@@ -51,7 +51,13 @@ class Economy(commands.Cog):
     
     @cog_ext.cog_slash(name="lend",description="Leihe dir bis zu 10mio Casino Coins", guild_ids=guild_ids, options=[manage_commands.create_option(name = "amount", description=f"Gebe die Anzahl an Coins an, die du leihen möchtest. Du musst hierzu noch den Zinssatz darauf zahlen",option_type = 4,required = True)])
     async def _lend(self,  ctx: SlashContext, amount=''):
+    
         await ctx.respond(eat=False)
+        with open('data_store.json', 'r') as f:
+            data = json.load(f)
+        if ctx.author.id in list(data[str(ctx.guild.id)]['blocked']):
+            await ctx.channel.send('Du bist aus dem Economy-ext System ausgeschlossen. Wenn dies unberechtigt ist, kannst du dich gerne in einem Ticket an Delfini wenden!')
+            return
         if int(amount) < 0:
             await ctx.channel.send('danke für den Versuch uns Geld zu schenken, aber wir nehmen keine negativen Kredite auf')
             return
@@ -62,8 +68,7 @@ class Economy(commands.Cog):
             await ctx.channel.send('Und für was brauchst du einen Kredit inhöhe von 0 coins?')
             return
         
-        with open('data_store.json', 'r') as f:
-            data = json.load(f)
+
         
         if str(ctx.author.id) not in list(data[str(ctx.guild.id)]):
             data[str(ctx.guild.id)][str(ctx.author.id)] = {
@@ -140,6 +145,7 @@ class Economy(commands.Cog):
             json.dump(data, f, indent=4)
         await ctx.channel.send(f'setted the new log channel to {channel.mention}')
 
+
     @cog_ext.cog_subcommand(base="shop", name="buy", description="Kaufe dir ein Item erneut.", guild_ids=guild_ids, options=[manage_commands.create_option(description='Bitte gebe das Iteam das du kaufen möchtest an.', name='item', required=True, option_type=(3), choices=['Mond', 'Mars', 'Saturn', 'Jupiter', 'Treibstoff']), manage_commands.create_option(name = "amount", description=f"Bitte gebe an, wie oft du das Item kaufen willst (Du kannst überspringen, wenn du nur 1 möchtest)",option_type = 4,required = False)]) 
     async def group_shop(self, ctx: SlashContext, item='', amount=1):
         await ctx.respond(eat=False)
@@ -161,6 +167,11 @@ class Economy(commands.Cog):
             }
             with open('data_store.json', 'w') as f:
                 json.dump(data, f, indent=4)
+
+        if ctx.author.id in list(data[str(ctx.guild.id)]['blocked']):
+            await ctx.channel.send('Du bist aus dem Economy-ext System ausgeschlossen. Wenn dies unberechtigt ist, kannst du dich gerne in einem Ticket an Delfini wenden!')
+            return
+            
         e = []
         for i in ctx.author.roles:
             e.append(i.id)
@@ -269,6 +280,9 @@ class Economy(commands.Cog):
             }
             with open('data_store.json', 'w') as f:
                 json.dump(data, f, indent=4)
+        if ctx.author.id in list(data[str(ctx.guild.id)]['blocked']):
+            await ctx.channel.send('Du bist aus dem Economy-ext System ausgeschlossen. Wenn dies unberechtigt ist, kannst du dich gerne in einem Ticket an Delfini wenden!')
+            return
         if time.strftime("%d%m%y") == str(data[str(ctx.guild.id)][str(ctx.author.id)]['collected']):
             await ctx.channel.send('Kein Income mehr vorhanden.')
             return
@@ -324,7 +338,6 @@ class Economy(commands.Cog):
         
         
         embed = discord.Embed(title='', description=f'income collected:\n{text}', timestamp=time)
-
         await ctx.send(embed=embed)
         response = webhook.execute()
         data[str(ctx.guild.id)][str(ctx.author.id)]['collected'] = time.strftime("%d%m%y")
@@ -356,6 +369,9 @@ class Economy(commands.Cog):
             }
             with open('data_store.json', 'w') as f:
                 json.dump(data, f, indent=4)
+        if ctx.author.id in list(data[str(ctx.guild.id)]['blocked']):
+            await ctx.channel.send('Du bist aus dem Economy-ext System ausgeschlossen. Wenn dies unberechtigt ist, kannst du dich gerne in einem Ticket an Delfini wenden!')
+            return
         if str(ctx.guild.id) not in list(data):
             return await ctx.send("Diese Guild ist leider nicht registriert.")
         if str(User.id) not in list(data[str(ctx.guild.id)]):
@@ -404,6 +420,9 @@ class Economy(commands.Cog):
             }
             with open('data_store.json', 'w') as f:
                 json.dump(data, f, indent=4)
+        if ctx.author.id in list(data[str(ctx.guild.id)]['blocked']):
+            await ctx.channel.send('Du bist aus dem Economy-ext System ausgeschlossen. Wenn dies unberechtigt ist, kannst du dich gerne in einem Ticket an Delfini wenden!')
+            return
         print(Public)
         print(len(str(Beschreibung)))
         if len(str(Beschreibung)) > 200:
@@ -413,7 +432,7 @@ class Economy(commands.Cog):
             await ctx.channel.send('Du darfst keine Links in deinem giveaway haben!')
             return
         if Public == 'Public':
-            role = 818136401757339680 
+            role = 818136401757339680 #everyone 
         else:
             role = 821320546918072320 
             
@@ -430,8 +449,8 @@ class Economy(commands.Cog):
             ctx.guild.id, ctx.author.id, cash=-Amount, reason="giveaway command"
         )
         
-        
-        description = f"{Beschreibung}\n{ctx.author.mention} verschenkt {currency}{Amount}! \nreagiere mit {self.emoji}, um teilzunehmen. \nBenötigte Rolle: {ctx.guild.get_role(role)}"       
+        description = f"{Beschreibung}\n{ctx.author.mention} verschenkt {currency}{Amount}! \nreagiere mit {self.emoji}, um teilzunehmen. \nBenötigte Rolle: {ctx.guild.get_role(role)}"
+
         embed = discord.Embed(title="Giveaway", description=description)
         msg = await ctx.send(embed=embed)
         await msg.add_reaction(self.emoji)  
@@ -451,7 +470,7 @@ class Economy(commands.Cog):
                 ),  
             ).users()  
             if not i.bot  
-            and i != ctx.author and role in e
+            and i != ctx.author and role in e and i.id not in list(data[str(ctx.guild.id)]['blocked'])
         ]
         print(msg.reactions, candidates)
         webhook_url = str(data[str(ctx.guild.id)]['webhook'])
@@ -488,17 +507,21 @@ class Economy(commands.Cog):
     async def refund(self, ctx: commands.Context, amount=None):
         print(amount)
         await ctx.respond(eat=False)
+        with open('data_store.json', 'r') as f:
+            data = json.load(f)
+        if ctx.author.id in list(data[str(ctx.guild.id)]['blocked']):
+            await ctx.channel.send('Du bist aus dem Economy-ext System ausgeschlossen. Wenn dies unberechtigt ist, kannst du dich gerne in einem Ticket an Delfini wenden!')
+            return
         if amount == 0:
             await ctx.channel.send('Du kannst nicht 0 coins zurückzahlen')
-            return                                                        
+            return                
         
         if str(amount).startswith('-'):
             amount = str(amount)[1:]
         
         
         print('1')
-        with open('data_store.json', 'r') as f:
-            data = json.load(f)
+
         if str(ctx.author.id) not in list(data[str(ctx.guild.id)]):
             data[str(ctx.guild.id)][str(ctx.author.id)] = {
                 "amount": 0,
@@ -515,7 +538,7 @@ class Economy(commands.Cog):
                 json.dump(data, f, indent=4)
         if data[str(ctx.guild.id)][str(ctx.author.id)]['amount'] == 0:
             await ctx.channel.send('Du hast gar keine schulden mehr')
-            return                                                        
+            return                                       
         
         if amount == None:
             print(data[str(ctx.guild.id)][str(ctx.author.id)]['amount'])
@@ -571,6 +594,39 @@ class Economy(commands.Cog):
         webhook = DiscordWebhook(url=webhook_url, content='')
         webhook.add_embed(embed1)
         response = webhook.execute()
+
+    @commands.command(aliases=['blacklist'])
+    @commands.has_permissions(manage_guild=True)
+    async def block(self, ctx, user: discord.Member=None):
+        if user == None:
+            await ctx.channel.send('Bitte gebe einen user an der geblockt werden soll')
+            return
+        with open('data_store.json', 'r+') as f:
+            data = json.load(f)
+        if user.id in list(data[str(ctx.guild.id)]['blocked']):
+            await ctx.channel.send('Der ist bereits aus dem economy-system geblocket')
+            return
+        data[str(ctx.guild.id)]['blocked'].append(user.id)
+        with open('data_store.json', 'w') as f:
+            json.dump(data, f, indent=4)
+        await ctx.channel.send(f'{user.mention} wurde erfolgreich geblockt.')
+    
+    @commands.command(aliases=['whitelist'])
+    @commands.has_permissions(manage_guild=True)
+    async def unblock(self, ctx, user: discord.Member=None):
+        if user == None:
+            await ctx.channel.send('Bitte gebe einen user an der entblocked werden soll')
+            return
+        with open('data_store.json', 'r+') as f:
+            data = json.load(f)
+        if user.id not in list(data[str(ctx.guild.id)]['blocked']):
+            await ctx.channel.send('Der ist gar nicht geblockt')
+            return
+        data[str(ctx.guild.id)]['blocked'].remove(user.id)
+        with open('data_store.json', 'w') as f:
+            json.dump(data, f, indent=4)
+        await ctx.channel.send(f'{user.mention} wurde erfolgreich gewhitelisted.')
+
 
 with open('bot-settings.json', 'r') as f:
     data = json.load(f)
