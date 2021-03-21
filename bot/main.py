@@ -24,6 +24,7 @@ time = datetime.datetime.now()
 
 
 def Find(string): 
+  
     regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
     url = re.findall(regex,string)       
     return [x[0] for x in url] 
@@ -73,7 +74,8 @@ class Economy(commands.Cog):
                 "saturn": 0,
                 "jupiter": 0,
                 "treibstoff": 0,
-                "collected": "0"
+                "collected": "0",
+                "week": 10
             }
             with open('data_store.json', 'w') as f:
                 json.dump(data, f, indent=4)
@@ -138,7 +140,7 @@ class Economy(commands.Cog):
             json.dump(data, f, indent=4)
         await ctx.channel.send(f'setted the new log channel to {channel.mention}')
 
-    @cog_ext.cog_subcommand(base="shop", name="buy", description="Kaufe dir ein Item erneut.", guild_ids=guild_ids, options=[manage_commands.create_option(description='Bitte gebe das Iteam das du kaufen möchtest an.', name='item', required=True, option_type=(3), choices=['Mond', 'Mars', 'Saturn', 'Jupiter', 'Treibstoff']), manage_commands.create_option(name = "amount", description=f"Bitte gebe an, wie oft du das Item kaufen willst (Du kannst überspringen, wenn du nur 1 möchtest)",option_type = 4,required = False)]) #, create_choices=('hello', 'foo', 'bar'))])
+    @cog_ext.cog_subcommand(base="shop", name="buy", description="Kaufe dir ein Item erneut.", guild_ids=guild_ids, options=[manage_commands.create_option(description='Bitte gebe das Iteam das du kaufen möchtest an.', name='item', required=True, option_type=(3), choices=['Mond', 'Mars', 'Saturn', 'Jupiter', 'Treibstoff']), manage_commands.create_option(name = "amount", description=f"Bitte gebe an, wie oft du das Item kaufen willst (Du kannst überspringen, wenn du nur 1 möchtest)",option_type = 4,required = False)]) 
     async def group_shop(self, ctx: SlashContext, item='', amount=1):
         await ctx.respond(eat=False)
         
@@ -155,6 +157,7 @@ class Economy(commands.Cog):
                 "jupiter": 0,
                 "treibstoff": 0,
                 "collected": "0",
+                "week": 10
             }
             with open('data_store.json', 'w') as f:
                 json.dump(data, f, indent=4)
@@ -181,7 +184,6 @@ class Economy(commands.Cog):
                 
                 bank = total - cash
                 await self.unb_client.patch_user_balance(guild_id=ctx.guild.id, user_id=ctx.author.id, cash=-cash, bank = -bank, reason=f"bought new Item\n**Details:** {bot.get_channel(data[str(ctx.guild.id)]['log']).mention}")
-            #return
             
             data[str(ctx.guild.id)][str(ctx.author.id)][str(item).lower()] = items
             with open('data_store.json', 'w') as f:
@@ -262,13 +264,21 @@ class Economy(commands.Cog):
                 "saturn": 0,
                 "jupiter": 0,
                 "treibstoff": 0,
-                "collected": "0"
+                "collected": "0",
+                "week": 10
             }
             with open('data_store.json', 'w') as f:
                 json.dump(data, f, indent=4)
         if time.strftime("%d%m%y") == str(data[str(ctx.guild.id)][str(ctx.author.id)]['collected']):
             await ctx.channel.send('Kein Income mehr vorhanden.')
             return
+        week = data[str(ctx.guild.id)][str(ctx.author.id)]["week"]
+        if week + 1 <= int(time.isocalendar()[1]):
+            pass
+        else:
+            await ctx.channel.send('Kein Income mehr vorhanden.')
+            return
+        
         mond = int(data[str(ctx.guild.id)][str(ctx.author.id)]['mond'])
         mars = int(data[str(ctx.guild.id)][str(ctx.author.id)]['mars'])
         saturn = int(data[str(ctx.guild.id)][str(ctx.author.id)]['saturn'])
@@ -312,15 +322,17 @@ class Economy(commands.Cog):
             webhook.add_embed(embed1)
             text += f'{jupiter}\*{currency}2000000 | Jupiter | Amount: {jupiter*2000000}\n'
         
+        
         embed = discord.Embed(title='', description=f'income collected:\n{text}', timestamp=time)
-        #embed.set_timestamp(time)
+
         await ctx.send(embed=embed)
         response = webhook.execute()
         data[str(ctx.guild.id)][str(ctx.author.id)]['collected'] = time.strftime("%d%m%y")
+        data[str(ctx.guild.id)][str(ctx.author.id)]['week'] = int(time.isocalendar()[1])
         with open('data_store.json', 'w') as f:
             json.dump(data, f, indent=4)
         
-        embed3 = discord.Embed(title='some stufff', description='some more stuff' ,type='rich')
+        
 
 
     @cog_ext.cog_slash(name='items', description='Erhalte eine Liste aller items die du hast.', guild_ids=guild_ids, options=[manage_commands.create_option(description='Du kannst einen anderen user angeben. Ansosnten wirst du genommen.', name='User', required=False, option_type=(6))])
@@ -339,7 +351,8 @@ class Economy(commands.Cog):
                 "saturn": 0,
                 "jupiter": 0,
                 "treibstoff": 0,
-                "collected": "0"
+                "collected": "0",
+                "week": 10
             }
             with open('data_store.json', 'w') as f:
                 json.dump(data, f, indent=4)
@@ -371,9 +384,10 @@ class Economy(commands.Cog):
         embed = discord.Embed(title='', description=text)
         
         await ctx.channel.send(embed=embed)
-    @cog_ext.cog_slash(description="Verschenke Geld", guild_ids=guild_ids, options=[manage_commands.create_option(description='Bitte gebe an, wie viel Geld du verschenken möchtest.', name='Amount', required=True, option_type=(4)), manage_commands.create_option(description='Soll Das giveaway für alle zugänglich sein, oder nur für den PinguClan?', name='Public', required=False, option_type=(3), choices=['Public', 'Private']), manage_commands.create_option(description='Gebe eine custom beschreibung an. Zeichenlimit: 200; Links sind verboten.', name='Beschreibung', required=False, option_type=3)])
-    async def giveaway(self, ctx: commands.Context, Amount = 0, Public = 'False', Beschreibung=''):
+    @cog_ext.cog_slash(description="Verschenke Geld", guild_ids=guild_ids, options=[manage_commands.create_option(description='Bitte gebe an, wie viel Geld du verschenken möchtest.', name='Amount', required=True, option_type=(4)), manage_commands.create_option(description='Gebe eine custom beschreibung an. Zeichenlimit: 200; Links sind verboten.', name='Beschreibung', required=False, option_type=3)])
+    async def giveaway(self, ctx: commands.Context, Amount = 0, Public = 'Public', Beschreibung=''):
         await ctx.respond(eat=False)
+        Public = 'Public'
         with open('data_store.json', 'r') as f:
             data = json.load(f)
         if str(ctx.author.id) not in list(data[str(ctx.guild.id)]):
@@ -385,7 +399,8 @@ class Economy(commands.Cog):
                 "saturn": 0,
                 "jupiter": 0,
                 "treibstoff": 0,
-                "collected": "0"
+                "collected": "0",
+                "week": 10
             }
             with open('data_store.json', 'w') as f:
                 json.dump(data, f, indent=4)
@@ -398,9 +413,9 @@ class Economy(commands.Cog):
             await ctx.channel.send('Du darfst keine Links in deinem giveaway haben!')
             return
         if Public == 'Public':
-            role = 818136401757339680 #everyone
+            role = 818136401757339680 
         else:
-            role = 821320546918072320 #pinguclan
+            role = 821320546918072320 
             
         if Amount <= 0:
             return await ctx.send("Du solltest schon ein bischen mehr verschenken ;)")
@@ -415,10 +430,8 @@ class Economy(commands.Cog):
             ctx.guild.id, ctx.author.id, cash=-Amount, reason="giveaway command"
         )
         
-        #if Beschreibung == None:
-        description = f"{Beschreibung}\n{ctx.author.mention} verschenkt {currency}{Amount}! \nreagiere mit {self.emoji}, um teilzunehmen. \nBenötigte Rolle: {ctx.guild.get_role(role).mention}"
-        #else:
-        #    description = f'{Beschreibung}'
+        
+        description = f"{Beschreibung}\n{ctx.author.mention} verschenkt {currency}{Amount}! \nreagiere mit {self.emoji}, um teilzunehmen. \nBenötigte Rolle: {ctx.guild.get_role(role)}"       
         embed = discord.Embed(title="Giveaway", description=description)
         msg = await ctx.send(embed=embed)
         await msg.add_reaction(self.emoji)  
@@ -471,14 +484,94 @@ class Economy(commands.Cog):
         webhook.add_embed(embed1)
         response = webhook.execute()
     
-    
-    
-    
-    
-    
-    
-    
-    
+    @cog_ext.cog_slash(name='refund', description='Bezahle dein geliehenes Geld zurück', guild_ids=guild_ids, options=[manage_commands.create_option(description='Du kannst optional angeben, wie viel du zurückzahlen möchstest. default: das maximum.', name='amount', required=False, option_type=(4))])
+    async def refund(self, ctx: commands.Context, amount=None):
+        print(amount)
+        await ctx.respond(eat=False)
+        if amount == 0:
+            await ctx.channel.send('Du kannst nicht 0 coins zurückzahlen')
+            return                                                        
+        
+        if str(amount).startswith('-'):
+            amount = str(amount)[1:]
+        
+        
+        print('1')
+        with open('data_store.json', 'r') as f:
+            data = json.load(f)
+        if str(ctx.author.id) not in list(data[str(ctx.guild.id)]):
+            data[str(ctx.guild.id)][str(ctx.author.id)] = {
+                "amount": 0,
+                "time": 0,
+                "mond": 0,
+                "mars": 0,
+                "saturn": 0,
+                "jupiter": 0,
+                "treibstoff": 0,
+                "collected": "0",
+                "week": 10
+            }
+            with open('data_store.json', 'w') as f:
+                json.dump(data, f, indent=4)
+        if data[str(ctx.guild.id)][str(ctx.author.id)]['amount'] == 0:
+            await ctx.channel.send('Du hast gar keine schulden mehr')
+            return                                                        
+        
+        if amount == None:
+            print(data[str(ctx.guild.id)][str(ctx.author.id)]['amount'])
+            amount = data[str(ctx.guild.id)][str(ctx.author.id)]['amount']
+            print('automativylly')
+        amount = int(amount)
+        print(amount)
+        bal1 = await self.unb_client.get_user_balance(guild_id=ctx.guild.id, user_id=ctx.author.id)
+        bal = bal1.cash + bal1.bank
+        print(bal)
+        print('1')
+        if int(bal) <= 0:
+            await ctx.channel.send('Du hast leider nicht genug Geld.')
+            return
+
+        if amount > data[str(ctx.guild.id)][str(ctx.author.id)]['amount']:
+            amount = data[str(ctx.guild.id)][str(ctx.author.id)]['amount']
+        if amount > bal:
+            amount = bal
+            
+        print('1')
+        if int(bal1.cash) - int(amount) > 0:
+            print(-int(amount))
+            await self.unb_client.patch_user_balance(guild_id=ctx.guild.id, user_id=ctx.author.id, cash=-int(amount), reason=f"used refund command\n**Details:** {bot.get_channel(data[str(ctx.guild.id)]['log']).mention}")
+            data[str(ctx.guild.id)][str(ctx.author.id)]['amount'] -= int(amount)
+            print('a1')
+        else:
+            total = int(amount)
+            cash = bal1.cash
+            
+            bank = total - cash
+            print(-cash)
+            print(-bank)
+            await self.unb_client.patch_user_balance(guild_id=ctx.guild.id, user_id=ctx.author.id, cash=-cash, bank = -bank, reason=f"used refund command\n**Details:** {bot.get_channel(data[str(ctx.guild.id)]['log']).mention}")
+            data[str(ctx.guild.id)][str(ctx.author.id)]['amount'] -= int(amount)
+            print(int(amount))
+            print(data[str(ctx.guild.id)][str(ctx.author.id)]['amount'])
+            print('b1')
+        with open('data_store.json', 'w') as f:
+            json.dump(data, f, indent=4)
+        guild = await self.unb_client.get_guild(ctx.guild.id)
+        currency = guild.symbol
+        if data[str(ctx.guild.id)][str(ctx.author.id)]['amount'] == 0:
+            await ctx.channel.send(f'Du hast {int(amount)}{currency} zurückgezahlt. Du hast jetzt keine Schulden mehr!')
+        else:
+            await ctx.channel.send(f'Du hast {int(amount)}{currency} zurückgezahlt. Du hast noch {data[str(ctx.guild.id)][str(ctx.author.id)]["amount"]}{currency} Schulden!')
+        
+        
+        webhook_url = str(data[str(ctx.guild.id)]['webhook'])
+        embed1 = DiscordEmbed(title='', description=f'**User:** {ctx.author.mention}\n**Amount:** {amount}\n**Reason:** refund command', color='03b2f8')
+        embed1.set_author(name='refund | Balance updated', icon_url='https://images-ext-2.discordapp.net/external/i0QukyQFeMvyky2L88d-lcpPGvruP_5XcvHxmsx56R0/https/media.discordapp.net/attachments/506838906872922145/551888336525197312/update.png')
+        embed1.set_timestamp()
+        webhook = DiscordWebhook(url=webhook_url, content='')
+        webhook.add_embed(embed1)
+        response = webhook.execute()
+
 with open('bot-settings.json', 'r') as f:
     data = json.load(f)
 
