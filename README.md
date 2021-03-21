@@ -92,13 +92,14 @@ pip install discord-py-slash-command
                              Private beschreibung: some description
 /incomes user: @some_user
 /refund amount: 100
+/amount lend user: @some_user
  ```
 ### Owner settings (normal commands)
 ```
  -setlog <channel ID>
+ -blacklist <user>
+ -whitelist <user>
 ```
-  creates a new webhook in the new channel and deletes the old one, and the new economy ext log gets logged there (in the main log of unb gets the channel mentioned)
-  
 
 
 ## Limits
