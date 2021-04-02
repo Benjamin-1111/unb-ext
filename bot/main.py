@@ -51,26 +51,35 @@ class Economy(commands.Cog):
         print("Ready!")
     
     @cog_ext.cog_slash(name="lend",description="Leihe dir bis zu 10mio Casino Coins", guild_ids=guild_ids, options=[manage_commands.create_option(name = "amount", description=f"Gebe die Anzahl an Coins an, die du leihen möchtest. Du musst hierzu noch den Zinssatz darauf zahlen",option_type = 4,required = True)])
+    #@cog_ext.cooldown(1, 70, commands.BucketType.member)
     async def _lend(self,  ctx: SlashContext, amount=''):
-    
-        await ctx.respond(eat=False)
+        if ctx.author.id in cooldown:
+            await ctx.respond(eat=True)
+            await ctx.send('You are on cooldown, please try again later.', hidden=True)
+            return
+        cooldown.append(ctx.author.id)
+
         with open('data_store.json', 'r') as f:
             data = json.load(f)
         if ctx.author.id in list(data[str(ctx.guild.id)]['blocked']):
             await ctx.respond(eat=True)
             await ctx.send('Du bist aus dem Economy-ext System ausgeschlossen. Wenn dies unberechtigt ist, kannst du dich gerne in einem Ticket an Delfini wenden!', hidden=True)
+            cooldown.remove(ctx.author.id)
             return
         if int(amount) < 0:
             await ctx.respond(eat=True)
-            await ctx.send('danke für den Versuch uns Geld zu schenken, aber wir nehmen keine negativen Kredite auf', hidden=True)
+            await ctx.send('Danke für den Versuch uns Geld zu schenken, aber wir nehmen keine negativen Kredite auf', hidden=True)
+            cooldown.remove(ctx.author.id)
             return
         if int(amount) >= 10000000:
             await ctx.respond(eat=True)
             await ctx.send('Das ist sehr viel Geld, bitte melde dich bei Delfini für so einen hohen Kredit', hidden=True)
+            cooldown.remove(ctx.author.id)
             return
         if int(amount) == 0:
             await ctx.respond(eat=True)
             await ctx.send('Und für was brauchst du einen Kredit inhöhe von 0 coins?', hidden=True)
+            cooldown.remove(ctx.author.id)
             return
         
 
@@ -93,7 +102,9 @@ class Economy(commands.Cog):
         if data[str(ctx.guild.id)][str(ctx.author.id)]['amount'] > 0:
             await ctx.respond(eat=True)
             await ctx.send(f'Du hast bereits Geld geliehen, bitte Zahle dieses zurück, bevor du einen neuen Kredit aufnehmen kannst.\n> {ctx.author} hat den command **`/lend amount: {amount}`** genutzt.', hidden=True)
+            cooldown.remove(ctx.author.id)
             return
+        await ctx.respond(eat=False)
         tax = int(int(amount) * self.tax)
         after_tax = int(int(amount) + ((self.tax/100)*int(amount)))
         guild = await self.unb_client.get_guild(ctx.guild.id)
@@ -106,6 +117,7 @@ class Economy(commands.Cog):
             reaction, user = await bot.wait_for('reaction_add', timeout=70.0, check=check)
         except asyncio.TimeoutError:
             await ctx.send('Action timed out')
+            cooldown.remove(ctx.author.id)
             return
         
         await ctx.send(f'Du hast dir {currency}{amount} geliehen. Bis in 4 Wochen musst du {currency}{after_tax} zurückzahlen. Für Jeden weiteren Tag fallen {currency}25000 an!')
@@ -116,7 +128,6 @@ class Economy(commands.Cog):
         data[str(ctx.guild.id)][str(ctx.author.id)]['time'] = int(date)
         with open('data_store.json', 'w') as f:
             json.dump(data, f, indent=4)
-        print(int(data[str(ctx.guild.id)]['log']))
         
         webhook_url = str(data[str(ctx.guild.id)]['webhook'])
         embed1 = DiscordEmbed(title='', description=f'**User:** {ctx.author.mention}\n**Amount:** {amount}\n**Reason:** lend command', color='03b2f8')
@@ -128,9 +139,8 @@ class Economy(commands.Cog):
         webhook = DiscordWebhook(url=webhook_url, content='')
         webhook.add_embed(embed1)
         webhook.add_embed(embed2)
-        response = webhook.execute()
-        
-        channel = bot.get_channel(int(data[str(ctx.guild.id)]['log']))
+        webhook.execute()
+        cooldown.remove(ctx.author.id)
         
         
     @commands.command()
